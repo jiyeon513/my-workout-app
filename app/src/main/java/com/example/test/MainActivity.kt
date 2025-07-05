@@ -17,6 +17,8 @@ import com.example.test.screenui.SettingsScreen
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.io.File
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 class MainActivity : ComponentActivity() {
     private val workoutRecords = mutableStateListOf<WorkoutRecord>()
@@ -27,6 +29,11 @@ class MainActivity : ComponentActivity() {
 
         val loadedRecords = loadWorkoutRecordsFromFile()
         workoutRecords.addAll(loadedRecords)
+
+        // 🔹 앱에 기록이 하나도 없을 경우, 테스트용 1달치 더미 데이터 추가
+        if (workoutRecords.isEmpty()) {
+            workoutRecords.addAll(generateDummyWorkoutRecords())
+        }
 
         enableEdgeToEdge()
         setContent {
@@ -95,5 +102,25 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun AppPreview() {
         MyMultiPageApp()
+    }
+
+    // ✅ 테스트용 더미 운동 기록 생성 (최근 30일)
+    private fun generateDummyWorkoutRecords(): List<WorkoutRecord> {
+        val dummyExercises = listOf(
+            "벤치프레스" to "가슴",
+            "랫풀다운" to "등",
+            "스쿼트" to "하체",
+            "숄더 프레스" to "어깨",
+            "크런치" to "복부"
+        )
+
+        val today = LocalDate.now()
+        return (1 until 30).map { i ->
+            val date = today.minusDays(i.toLong()).format(DateTimeFormatter.ofPattern("yyyy.MM.dd"))
+            val logs = dummyExercises.map { (name, part) ->
+                ExerciseLog(name = name, sets = (2..5).random(), date = date, part = part)
+            }
+            WorkoutRecord(date = date, logs = logs, imagePath = null)
+        }
     }
 }

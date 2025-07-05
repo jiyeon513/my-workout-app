@@ -1,6 +1,8 @@
 // 파일 경로: com.example.test.screenui.HomeScreen.kt
 package com.example.test.screenui
 
+import android.content.Context
+import android.graphics.Bitmap
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -14,17 +16,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.test.model.Exercise
 import com.example.test.model.ExerciseLog
 import com.example.test.model.WorkoutRecord
+import java.io.File
+import java.io.FileOutputStream
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 @Composable
 fun HomeScreen(onRecordSaved: (WorkoutRecord) -> Unit) {
+    val context = LocalContext.current
+
     val exerciseList = listOf(
         Exercise(1, "벤치프레스", "가슴 근육을 키우는 대표 운동", "가슴"),
         Exercise(2, "딥스", "하부 가슴 자극", "가슴"),
@@ -44,7 +51,6 @@ fun HomeScreen(onRecordSaved: (WorkoutRecord) -> Unit) {
     val selectedExercises = remember { mutableStateMapOf<Exercise, Int>() }
     val favorites = remember { mutableStateListOf<Int>() }
     var selectedTabIndex by remember { mutableStateOf(0) }
-
     var showDialog by remember { mutableStateOf(false) }
 
     val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
@@ -53,7 +59,8 @@ fun HomeScreen(onRecordSaved: (WorkoutRecord) -> Unit) {
             val logs = selectedExercises.map { (exercise, sets) ->
                 ExerciseLog(name = exercise.name, sets = sets, date = today, part = exercise.part)
             }
-            val record = WorkoutRecord(date = today, logs = logs, imagePath = uri.toString())
+            val imagePath = copyUriToInternalStorage(context, uri)
+            val record = WorkoutRecord(date = today, logs = logs, imagePath = imagePath)
             onRecordSaved(record)
             selectedExercises.clear()
         }
@@ -65,8 +72,8 @@ fun HomeScreen(onRecordSaved: (WorkoutRecord) -> Unit) {
             val logs = selectedExercises.map { (exercise, sets) ->
                 ExerciseLog(name = exercise.name, sets = sets, date = today, part = exercise.part)
             }
-            val uri = Uri.EMPTY // 실제 저장 로직 추가 필요
-            val record = WorkoutRecord(date = today, logs = logs, imagePath = uri.toString())
+            val imagePath = saveBitmapToInternalStorage(context, bitmap)
+            val record = WorkoutRecord(date = today, logs = logs, imagePath = imagePath)
             onRecordSaved(record)
             selectedExercises.clear()
         }
@@ -193,7 +200,6 @@ fun HomeScreen(onRecordSaved: (WorkoutRecord) -> Unit) {
             }
         }
 
-        // ✅ 사진 선택 다이얼로그 (Compose용)
         if (showDialog) {
             AlertDialog(
                 onDismissRequest = { showDialog = false },
@@ -232,4 +238,31 @@ fun HomeScreen(onRecordSaved: (WorkoutRecord) -> Unit) {
             Text("✅ 오늘의 운동 기록 생성")
         }
     }
+}
+
+// ✅ 비트맵을 내부 저장소에 저장
+fun saveBitmapToInternalStorage(context: Context, bitmap: Bitmap): String {
+    val filename = "IMG_${System.currentTimeMillis()}.jpg"
+    val file = File(context.filesDir, filename)
+    val outputStream = FileOutputStream(file)
+    bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
+    outputStream.flush()
+    outputStream.close()
+    return file.absolutePath
+}
+
+// ✅ Uri(갤러리) 이미지도 내부 저장소로 복사
+fun copyUriToInternalStorage(context: Context, uri: Uri): String {
+    val inputStream = context.contentResolver.openInputStream(uri)!!
+    val filename = "IMG_${System.currentTimeMillis()}.jpg"
+    val file = File(context.filesDir, filename)
+    val outputStream = FileOutputStream(file)
+
+    inputStream.use { input ->
+        outputStream.use { output ->
+            input.copyTo(output)
+        }
+    }
+
+    return file.absolutePath
 }
