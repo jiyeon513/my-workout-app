@@ -92,7 +92,7 @@ class MainActivity : ComponentActivity() {
                         saveExerciseLogsToFile() // 기록 저장
                     }
                     "history" -> HistoryScreen(exerciseLogs)
-                    "settings" -> SettingsScreen()
+                    "settings" -> SettingsScreen(exerciseLogs)
                 }
             }
         }

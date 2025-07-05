@@ -66,6 +66,8 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation(libs.okhttp)
     implementation(libs.json)
+    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+
 
 
 

@@ -28,7 +28,10 @@ fun HomeScreen(onLogSaved: (List<ExerciseLog>) -> Unit) {
         Exercise(5, "바벨로우", "전체 등 근육을 강화", "등"),
         Exercise(6, "숄더 프레스", "어깨 전면 근육 발달", "어깨"),
         Exercise(7, "스쿼트", "하체 전반에 자극", "하체"),
-        Exercise(8, "런지", "하체 균형과 근력 강화", "하체")
+        Exercise(8, "런지", "하체 균형과 근력 강화", "하체"),
+        Exercise(9, "크런치", "복부 상부 자극", "복부"),
+        Exercise(10, "레그레이즈", "복부 하부를 자극", "복부"),
+        Exercise(11, "플랭크", "복부와 코어 안정성 강화", "복부")
     )
 
     var selectedPart by remember { mutableStateOf("") }
@@ -49,10 +52,7 @@ fun HomeScreen(onLogSaved: (List<ExerciseLog>) -> Unit) {
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        TabRow(
-            selectedTabIndex = selectedTabIndex,
-            modifier = Modifier.fillMaxWidth()
-        ) {
+        TabRow(selectedTabIndex = selectedTabIndex, modifier = Modifier.fillMaxWidth()) {
             Tab(selected = selectedTabIndex == 0, onClick = { selectedTabIndex = 0 }) {
                 Text("전체 보기", modifier = Modifier.padding(16.dp))
             }
@@ -72,15 +72,12 @@ fun HomeScreen(onLogSaved: (List<ExerciseLog>) -> Unit) {
                     Text(if (selectedPart.isEmpty()) "필터: 전체" else "필터: $selectedPart")
                 }
 
-                DropdownMenu(
-                    expanded = showPartDropdown,
-                    onDismissRequest = { showPartDropdown = false }
-                ) {
+                DropdownMenu(expanded = showPartDropdown, onDismissRequest = { showPartDropdown = false }) {
                     DropdownMenuItem(text = { Text("전체") }, onClick = {
                         selectedPart = ""
                         showPartDropdown = false
                     })
-                    listOf("즐겨찾기", "가슴", "등", "어깨", "하체").forEach { part ->
+                    listOf("즐겨찾기", "가슴", "등", "어깨", "하체", "복부").forEach { part ->
                         DropdownMenuItem(
                             text = { Text(part) },
                             onClick = {
@@ -120,7 +117,7 @@ fun HomeScreen(onLogSaved: (List<ExerciseLog>) -> Unit) {
             onClick = {
                 val today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy.MM.dd"))
                 val logs = selectedExercises.map { (exercise, sets) ->
-                    ExerciseLog(name = exercise.name, sets = sets, date = today)
+                    ExerciseLog(name = exercise.name, sets = sets, date = today, part = exercise.part)
                 }
                 onLogSaved(logs)
                 selectedExercises.clear()

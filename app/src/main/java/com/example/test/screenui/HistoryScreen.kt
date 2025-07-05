@@ -35,7 +35,7 @@ fun HistoryScreen(exerciseLogs: List<ExerciseLog>) {
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Text("${log.date} - ${log.name}", fontWeight = FontWeight.Bold)
+                        Text("${log.date} - ${log.name} (${log.part})", fontWeight = FontWeight.Bold)
                         Text("${log.sets}세트 수행")
                     }
                 }
