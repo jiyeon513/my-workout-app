@@ -1,6 +1,11 @@
 package com.example.test
 
 import android.os.Bundle
+import android.content.ContentValues
+import android.graphics.BitmapFactory
+import android.os.Build
+import android.provider.MediaStore
+import android.content.Context
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -19,6 +24,8 @@ import com.google.gson.reflect.TypeToken
 import java.io.File
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import android.graphics.Bitmap
+
 
 class MainActivity : ComponentActivity() {
     private val workoutRecords = mutableStateListOf<WorkoutRecord>()
@@ -27,13 +34,15 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val loadedRecords = loadWorkoutRecordsFromFile()
-        workoutRecords.addAll(loadedRecords)
+        // ✅ 갤러리에 비포/애프터 이미지 복사
+        copyDrawableToGallery(this, "before", "before_photo")
+        copyDrawableToGallery(this, "after", "after_photo")
 
-        // 🔹 앱에 기록이 하나도 없을 경우, 테스트용 1달치 더미 데이터 추가
-        if (workoutRecords.isEmpty()) {
-            workoutRecords.addAll(generateDummyWorkoutRecords())
-        }
+        // ✅ 강제 덮어쓰기 (개발용)
+        val dummy = generateDummyWorkoutRecords()
+        workoutRecords.clear()
+        workoutRecords.addAll(dummy)
+        saveWorkoutRecordsToFile()
 
         enableEdgeToEdge()
         setContent {
@@ -104,7 +113,7 @@ class MainActivity : ComponentActivity() {
         MyMultiPageApp()
     }
 
-    // ✅ 테스트용 더미 운동 기록 생성 (최근 30일)
+    // ✅ 더미 생성 함수 (5일 간격, 날짜별 before/after 이미지 분기)
     private fun generateDummyWorkoutRecords(): List<WorkoutRecord> {
         val dummyExercises = listOf(
             "벤치프레스" to "가슴",
@@ -115,12 +124,47 @@ class MainActivity : ComponentActivity() {
         )
 
         val today = LocalDate.now()
-        return (1 until 30).map { i ->
-            val date = today.minusDays(i.toLong()).format(DateTimeFormatter.ofPattern("yyyy.MM.dd"))
+        return (1..150 step 5).map { i ->
+            val dateObj = today.minusDays(i.toLong())
+            val dateStr = dateObj.format(DateTimeFormatter.ofPattern("yyyy.MM.dd"))
+
+            val threshold = LocalDate.of(2025, 6, 1)
+            val image = if (dateObj.isAfter(threshold)) "after" else "before"
+
             val logs = dummyExercises.map { (name, part) ->
-                ExerciseLog(name = name, sets = (2..5).random(), date = date, part = part)
+                ExerciseLog(name = name, sets = (2..5).random(), date = dateStr, part = part)
             }
-            WorkoutRecord(date = date, logs = logs, imagePath = null)
+
+            WorkoutRecord(date = dateStr, logs = logs, imagePath = image)
+        }
+    }
+
+    // ✅ drawable 리소스를 갤러리에 복사
+    private fun copyDrawableToGallery(context: Context, drawableName: String, displayName: String) {
+        val resId = context.resources.getIdentifier(drawableName, "drawable", context.packageName)
+        if (resId == 0) return
+
+        val bitmap = BitmapFactory.decodeResource(context.resources, resId)
+
+        val contentValues = ContentValues().apply {
+            put(MediaStore.Images.Media.DISPLAY_NAME, "$displayName.jpg")
+            put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                put(MediaStore.Images.Media.IS_PENDING, 1)
+            }
+        }
+
+        val resolver = context.contentResolver
+        val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+        uri?.let {
+            resolver.openOutputStream(it)?.use { outputStream ->
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                contentValues.clear()
+                contentValues.put(MediaStore.Images.Media.IS_PENDING, 0)
+                resolver.update(uri, contentValues, null, null)
+            }
         }
     }
 }
