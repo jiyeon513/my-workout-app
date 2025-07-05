@@ -1,5 +1,9 @@
+// 파일 경로: com.example.test.screenui.HomeScreen.kt
 package com.example.test.screenui
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -15,11 +19,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.test.model.Exercise
 import com.example.test.model.ExerciseLog
+import com.example.test.model.WorkoutRecord
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 @Composable
-fun HomeScreen(onLogSaved: (List<ExerciseLog>) -> Unit) {
+fun HomeScreen(onRecordSaved: (WorkoutRecord) -> Unit) {
     val exerciseList = listOf(
         Exercise(1, "벤치프레스", "가슴 근육을 키우는 대표 운동", "가슴"),
         Exercise(2, "딥스", "하부 가슴 자극", "가슴"),
@@ -38,8 +43,34 @@ fun HomeScreen(onLogSaved: (List<ExerciseLog>) -> Unit) {
     var showPartDropdown by remember { mutableStateOf(false) }
     val selectedExercises = remember { mutableStateMapOf<Exercise, Int>() }
     val favorites = remember { mutableStateListOf<Int>() }
-
     var selectedTabIndex by remember { mutableStateOf(0) }
+
+    var showDialog by remember { mutableStateOf(false) }
+
+    val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let {
+            val today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy.MM.dd"))
+            val logs = selectedExercises.map { (exercise, sets) ->
+                ExerciseLog(name = exercise.name, sets = sets, date = today, part = exercise.part)
+            }
+            val record = WorkoutRecord(date = today, logs = logs, imagePath = uri.toString())
+            onRecordSaved(record)
+            selectedExercises.clear()
+        }
+    }
+
+    val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
+        if (bitmap != null) {
+            val today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy.MM.dd"))
+            val logs = selectedExercises.map { (exercise, sets) ->
+                ExerciseLog(name = exercise.name, sets = sets, date = today, part = exercise.part)
+            }
+            val uri = Uri.EMPTY // 실제 저장 로직 추가 필요
+            val record = WorkoutRecord(date = today, logs = logs, imagePath = uri.toString())
+            onRecordSaved(record)
+            selectedExercises.clear()
+        }
+    }
 
     val filteredList = when (selectedTabIndex) {
         0 -> when (selectedPart) {
@@ -52,7 +83,7 @@ fun HomeScreen(onLogSaved: (List<ExerciseLog>) -> Unit) {
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        TabRow(selectedTabIndex = selectedTabIndex, modifier = Modifier.fillMaxWidth()) {
+        TabRow(selectedTabIndex = selectedTabIndex) {
             Tab(selected = selectedTabIndex == 0, onClick = { selectedTabIndex = 0 }) {
                 Text("전체 보기", modifier = Modifier.padding(16.dp))
             }
@@ -63,9 +94,7 @@ fun HomeScreen(onLogSaved: (List<ExerciseLog>) -> Unit) {
 
         if (selectedTabIndex == 0) {
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
                 contentAlignment = Alignment.CenterStart
             ) {
                 Button(onClick = { showPartDropdown = true }) {
@@ -90,37 +119,110 @@ fun HomeScreen(onLogSaved: (List<ExerciseLog>) -> Unit) {
             }
         }
 
-        LazyColumn(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp)
-        ) {
+        LazyColumn(modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 12.dp)) {
             items(filteredList) { exercise ->
-                ExerciseRowWithSetSelector(
-                    exercise = exercise,
-                    selectedSet = selectedExercises[exercise] ?: 0,
-                    isFavorite = exercise.id in favorites,
-                    onFavoriteToggle = {
-                        if (exercise.id in favorites) favorites.remove(exercise.id)
-                        else favorites.add(exercise.id)
-                    },
-                    onSetChange = { set ->
-                        if (set == 0) selectedExercises.remove(exercise)
-                        else selectedExercises[exercise] = set
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 6.dp)
+                        .shadow(4.dp, RoundedCornerShape(16.dp)),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if ((selectedExercises[exercise] ?: 0) > 0) Color(0xFFBBDEFB) else Color(0xFFF8F9FA)
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                "${exercise.name} (${exercise.part})",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 18.sp,
+                                modifier = Modifier.weight(1f)
+                            )
+                            IconToggleButton(
+                                checked = exercise.id in favorites,
+                                onCheckedChange = {
+                                    if (exercise.id in favorites) favorites.remove(exercise.id)
+                                    else favorites.add(exercise.id)
+                                }
+                            ) {
+                                Text(if (exercise.id in favorites) "★" else "☆", fontSize = 20.sp)
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(exercise.description)
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("세트 수: ", fontWeight = FontWeight.SemiBold)
+                            var expanded by remember { mutableStateOf(false) }
+                            Box {
+                                Button(
+                                    onClick = { expanded = true },
+                                    modifier = Modifier.height(32.dp).width(70.dp),
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                ) {
+                                    Text(
+                                        if ((selectedExercises[exercise] ?: 0) == 0) "선택"
+                                        else "${selectedExercises[exercise]}세트",
+                                        fontSize = 15.sp
+                                    )
+                                }
+
+                                DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                                    (1..5).forEach { count ->
+                                        DropdownMenuItem(
+                                            text = { Text("$count 세트") },
+                                            onClick = {
+                                                selectedExercises[exercise] = count
+                                                expanded = false
+                                            }
+                                        )
+                                    }
+                                    DropdownMenuItem(
+                                        text = { Text("선택 취소") },
+                                        onClick = {
+                                            selectedExercises.remove(exercise)
+                                            expanded = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
                     }
-                )
+                }
             }
+        }
+
+        // ✅ 사진 선택 다이얼로그 (Compose용)
+        if (showDialog) {
+            AlertDialog(
+                onDismissRequest = { showDialog = false },
+                title = { Text("사진 선택") },
+                text = { Text("어떤 방식으로 사진을 첨부할까요?") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        showDialog = false
+                        galleryLauncher.launch("image/*")
+                    }) {
+                        Text("갤러리")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = {
+                        showDialog = false
+                        cameraLauncher.launch(null)
+                    }) {
+                        Text("카메라")
+                    }
+                }
+            )
         }
 
         Button(
             onClick = {
-                val today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy.MM.dd"))
-                val logs = selectedExercises.map { (exercise, sets) ->
-                    ExerciseLog(name = exercise.name, sets = sets, date = today, part = exercise.part)
+                if (selectedExercises.isNotEmpty()) {
+                    showDialog = true
                 }
-                onLogSaved(logs)
-                selectedExercises.clear()
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -128,86 +230,6 @@ fun HomeScreen(onLogSaved: (List<ExerciseLog>) -> Unit) {
             enabled = selectedExercises.isNotEmpty()
         ) {
             Text("✅ 오늘의 운동 기록 생성")
-        }
-    }
-}
-
-@Composable
-fun ExerciseRowWithSetSelector(
-    exercise: Exercise,
-    selectedSet: Int,
-    isFavorite: Boolean,
-    onFavoriteToggle: () -> Unit,
-    onSetChange: (Int) -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 6.dp)
-            .shadow(4.dp, shape = RoundedCornerShape(16.dp)),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (selectedSet > 0) Color(0xFFBBDEFB) else Color(0xFFF8F9FA)
-        )
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    "${exercise.name} (${exercise.part})",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
-                    modifier = Modifier.weight(1f)
-                )
-                IconToggleButton(
-                    checked = isFavorite,
-                    onCheckedChange = { onFavoriteToggle() }
-                ) {
-                    Text(if (isFavorite) "★" else "☆", fontSize = 20.sp)
-                }
-            }
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(exercise.description)
-            Spacer(modifier = Modifier.height(12.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("세트 수: ", fontWeight = FontWeight.SemiBold)
-                SetDropdown(selectedSet, onSetChange)
-            }
-        }
-    }
-}
-
-@Composable
-fun SetDropdown(selected: Int, onSetChange: (Int) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-
-    Box {
-        Button(
-            onClick = { expanded = true },
-            modifier = Modifier
-                .height(32.dp)
-                .width(70.dp),
-            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-        ) {
-            Text(if (selected == 0) "선택" else "${selected}세트", fontSize = 15.sp)
-        }
-
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            (1..5).forEach { count ->
-                DropdownMenuItem(
-                    text = { Text("$count 세트") },
-                    onClick = {
-                        onSetChange(count)
-                        expanded = false
-                    }
-                )
-            }
-            DropdownMenuItem(
-                text = { Text("선택 취소") },
-                onClick = {
-                    onSetChange(0)
-                    expanded = false
-                }
-            )
         }
     }
 }

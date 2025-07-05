@@ -10,6 +10,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.test.model.ExerciseLog
+import com.example.test.model.WorkoutRecord
 import com.example.test.screenui.HomeScreen
 import com.example.test.screenui.HistoryScreen
 import com.example.test.screenui.SettingsScreen
@@ -18,19 +19,16 @@ import com.google.gson.reflect.TypeToken
 import java.io.File
 
 class MainActivity : ComponentActivity() {
-
-    private val exerciseLogs = mutableStateListOf<ExerciseLog>()
+    private val workoutRecords = mutableStateListOf<WorkoutRecord>()
     private var currentPage by mutableStateOf("home")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // ✅ 앱 시작 시 저장된 기록 불러오기
-        val loadedLogs = loadExerciseLogsFromFile()
-        exerciseLogs.addAll(loadedLogs)
+        val loadedRecords = loadWorkoutRecordsFromFile()
+        workoutRecords.addAll(loadedRecords)
 
         enableEdgeToEdge()
-
         setContent {
             Surface(modifier = Modifier.fillMaxSize()) {
                 MyMultiPageApp()
@@ -38,22 +36,19 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // ✅ JSON으로 파일 저장
-    private fun saveExerciseLogsToFile() {
+    private fun saveWorkoutRecordsToFile() {
         val gson = Gson()
-        val json = gson.toJson(exerciseLogs)
-        val file = File(filesDir, "exercise_logs.json")
+        val json = gson.toJson(workoutRecords)
+        val file = File(filesDir, "workout_records.json")
         file.writeText(json)
     }
 
-    // ✅ JSON 파일에서 로드
-    private fun loadExerciseLogsFromFile(): List<ExerciseLog> {
-        val file = File(filesDir, "exercise_logs.json")
+    private fun loadWorkoutRecordsFromFile(): List<WorkoutRecord> {
+        val file = File(filesDir, "workout_records.json")
         if (!file.exists()) return emptyList()
-
         val json = file.readText()
         val gson = Gson()
-        val type = object : TypeToken<List<ExerciseLog>>() {}.type
+        val type = object : TypeToken<List<WorkoutRecord>>() {}.type
         return gson.fromJson(json, type)
     }
 
@@ -83,16 +78,14 @@ class MainActivity : ComponentActivity() {
                 }
             }
         ) { innerPadding ->
-            Box(modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)) {
+            Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
                 when (currentPage) {
-                    "home" -> HomeScreen { logs ->
-                        exerciseLogs.addAll(logs)
-                        saveExerciseLogsToFile() // 기록 저장
+                    "home" -> HomeScreen { record ->
+                        workoutRecords.add(record)
+                        saveWorkoutRecordsToFile()
                     }
-                    "history" -> HistoryScreen(exerciseLogs)
-                    "settings" -> SettingsScreen(exerciseLogs)
+                    "history" -> HistoryScreen(workoutRecords)
+                    "settings" -> SettingsScreen(workoutRecords)
                 }
             }
         }
@@ -104,4 +97,3 @@ class MainActivity : ComponentActivity() {
         MyMultiPageApp()
     }
 }
-
