@@ -135,7 +135,7 @@ class MainActivity : ComponentActivity() {
                 ExerciseLog(name = name, sets = (2..5).random(), date = dateStr, part = part)
             }
 
-            WorkoutRecord(date = dateStr, logs = logs, imagePath = image)
+            WorkoutRecord(date = dateStr, logs = logs, imagePath = image, timestamp = dateObj.toEpochDay() * 1000L)
         }
     }
 

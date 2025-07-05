@@ -60,7 +60,7 @@ fun HomeScreen(onRecordSaved: (WorkoutRecord) -> Unit) {
                 ExerciseLog(name = exercise.name, sets = sets, date = today, part = exercise.part)
             }
             val imagePath = copyUriToInternalStorage(context, uri)
-            val record = WorkoutRecord(date = today, logs = logs, imagePath = imagePath)
+            val record = WorkoutRecord(date = today, logs = logs, imagePath = imagePath, timestamp = System.currentTimeMillis() )
             onRecordSaved(record)
             selectedExercises.clear()
         }

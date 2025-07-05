@@ -30,7 +30,7 @@ fun HistoryScreen(workoutRecords: List<WorkoutRecord>) {
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
-            items(workoutRecords.sortedByDescending { it.date }) { record ->
+            items(workoutRecords.sortedByDescending { it.timestamp }) { record ->
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()

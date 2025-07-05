@@ -7,5 +7,6 @@ data class ExerciseLog(val name: String, val sets: Int, val date: String, val pa
 data class WorkoutRecord(
     val date: String,
     val logs: List<ExerciseLog>,
-    val imagePath: String? = null
+    val imagePath: String? = null,
+    val timestamp: Long = System.currentTimeMillis()  // ✅ 추가!
 )
