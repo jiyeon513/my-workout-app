@@ -22,13 +22,22 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
 import com.example.test.model.WorkoutRecord
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import androidx.compose.ui.unit.LayoutDirection
 
+enum class HistoryViewMode {
+    LIST, GALLERY, COMPARE
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(workoutRecords: List<WorkoutRecord>) {
-    var isGalleryMode by remember { mutableStateOf(false) }
+    var viewMode by remember { mutableStateOf(HistoryViewMode.LIST) }
+    var showDropdown by remember { mutableStateOf(false) }
+    var showDropdown2 by remember { mutableStateOf(false) }
+    var selectedComparisonRecord by remember { mutableStateOf<WorkoutRecord?>(null) }
 
     Scaffold(
         topBar = {
@@ -51,23 +60,52 @@ fun HistoryScreen(workoutRecords: List<WorkoutRecord>) {
                     start = innerPadding.calculateStartPadding(LayoutDirection.Ltr),
                     top = innerPadding.calculateTopPadding(),
                     end = innerPadding.calculateEndPadding(LayoutDirection.Ltr),
-                    bottom = 0.dp // 하단 패딩 제거
+                    bottom = 0.dp
                 )
                 .fillMaxSize()
         ) {
 
-            // 제목 아래 보라색 버튼
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.Start
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
+                Box {
+                    Button(
+                        onClick = { showDropdown = true },
+                        shape = RoundedCornerShape(20.dp)
+                    ) {
+                        Text("보기 모드 선택")
+                    }
+
+                    DropdownMenu(
+                        expanded = showDropdown,
+                        onDismissRequest = { showDropdown = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("리스트 모드") },
+                            onClick = {
+                                viewMode = HistoryViewMode.LIST
+                                showDropdown = false
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("갤러리 모드") },
+                            onClick = {
+                                viewMode = HistoryViewMode.GALLERY
+                                showDropdown = false
+                            }
+                        )
+                    }
+                }
+
                 Button(
-                    onClick = { isGalleryMode = !isGalleryMode },
+                    onClick = { viewMode = HistoryViewMode.COMPARE },
                     shape = RoundedCornerShape(20.dp)
                 ) {
-                    Text(if (isGalleryMode) "전체 보기" else "사진만 보기")
+                    Text("운동 기록 비교")
                 }
             }
 
@@ -80,118 +118,326 @@ fun HistoryScreen(workoutRecords: List<WorkoutRecord>) {
                 }
             } else {
                 val sortedRecords = workoutRecords.sortedByDescending { it.timestamp }
+                val latestRecord = sortedRecords.firstOrNull()
 
-                if (isGalleryMode) {
-                    // 갤러리 모드 (그리드 2열)
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(2),
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(sortedRecords) { record ->
-                            val context = LocalContext.current
-                            record.imagePath?.let { path ->
-                                val isDrawable = !path.contains("/")
-                                val imageModifier = Modifier
-                                    .fillMaxWidth()
-                                    .aspectRatio(1f)
-
-                                if (isDrawable) {
-                                    val resId = context.resources.getIdentifier(
-                                        path, "drawable", context.packageName
-                                    )
-                                    if (resId != 0) {
-                                        Image(
-                                            painter = painterResource(resId),
-                                            contentDescription = null,
-                                            modifier = imageModifier.clip(RoundedCornerShape(12.dp)),
-                                            contentScale = ContentScale.Crop
-                                        )
-                                    }
-                                } else {
-                                    Image(
-                                        painter = rememberAsyncImagePainter(path),
-                                        contentDescription = null,
-                                        modifier = imageModifier.clip(RoundedCornerShape(12.dp)),
-                                        contentScale = ContentScale.Crop
-                                    )
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    // 리스트 모드
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 16.dp)
-                    ) {
-                        items(sortedRecords) { record ->
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 8.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFFEDE7F6))
-                            ) {
-                                Row(
+                when (viewMode) {
+                    HistoryViewMode.COMPARE -> {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalArrangement = Arrangement.Top,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            if (latestRecord != null) {
+                                Card(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(16.dp),
-                                    verticalAlignment = Alignment.Top
+                                        .wrapContentHeight()
+                                        .padding(bottom = 16.dp),
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9))
                                 ) {
-                                    val context = LocalContext.current
-                                    record.imagePath?.let { path ->
-                                        val isDrawable = !path.contains("/")
-                                        val imageModifier = Modifier
-                                            .width(100.dp)
-                                            .height(100.dp)
-                                            .padding(end = 12.dp)
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp),
+                                        verticalAlignment = Alignment.Top
+                                    ) {
+                                        val context = LocalContext.current
+                                        latestRecord.imagePath?.let { path ->
+                                            val isDrawable = !path.contains("/")
+                                            val imageModifier = Modifier
+                                                .width(100.dp)
+                                                .height(100.dp)
+                                                .padding(end = 12.dp)
+                                                .clip(RoundedCornerShape(12.dp))
 
-                                        if (isDrawable) {
-                                            val resId = context.resources.getIdentifier(
-                                                path,
-                                                "drawable",
-                                                context.packageName
-                                            )
-                                            if (resId != 0) {
+                                            if (isDrawable) {
+                                                val resId = context.resources.getIdentifier(
+                                                    path, "drawable", context.packageName
+                                                )
+                                                if (resId != 0) {
+                                                    Image(
+                                                        painter = painterResource(resId),
+                                                        contentDescription = null,
+                                                        modifier = imageModifier,
+                                                        contentScale = ContentScale.Crop
+                                                    )
+                                                }
+                                            } else {
                                                 Image(
-                                                    painter = painterResource(resId),
-                                                    contentDescription = "운동 완료 사진",
+                                                    painter = rememberAsyncImagePainter(path),
+                                                    contentDescription = null,
                                                     modifier = imageModifier,
                                                     contentScale = ContentScale.Crop
                                                 )
                                             }
-                                        } else {
-                                            Image(
-                                                painter = rememberAsyncImagePainter(path),
-                                                contentDescription = "운동 완료 사진",
-                                                modifier = imageModifier,
-                                                contentScale = ContentScale.Crop
+                                        }
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = "📅 최근 운동 기록",
+                                                style = MaterialTheme.typography.titleMedium,
+                                                fontWeight = FontWeight.Bold
                                             )
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                            latestRecord.logs.forEach { log ->
+                                                Text("- ${log.name} (${log.part}): ${log.sets}세트")
+                                            }
                                         }
                                     }
+                                }
+                            }
 
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            text = "🗓 ${record.date} 운동 완료!",
-                                            style = MaterialTheme.typography.titleMedium,
-                                            fontWeight = FontWeight.Bold
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Button(
+                                        onClick = { showDropdown2 = true },
+                                        shape = RoundedCornerShape(20.dp)
+                                    ) {
+                                        Text("📅 날짜 선택", fontSize = 16.sp)
+                                    }
+                                    DropdownMenu(
+                                        expanded = showDropdown2,
+                                        onDismissRequest = { showDropdown2 = false }
+                                    ) {
+                                        DropdownMenuItem(
+                                            text = { Text("1개월 전") },
+                                            onClick = {
+                                                selectedComparisonRecord = findClosestRecord(sortedRecords, 1)
+                                                showDropdown2 = false
+                                            }
                                         )
-                                        Spacer(modifier = Modifier.height(4.dp))
-                                        record.logs.forEach { log ->
-                                            Text("- ${log.name} (${log.part}): ${log.sets}세트")
+                                        DropdownMenuItem(
+                                            text = { Text("3개월 전") },
+                                            onClick = {
+                                                selectedComparisonRecord = findClosestRecord(sortedRecords, 3)
+                                                showDropdown2 = false
+                                            }
+                                        )
+                                        DropdownMenuItem(
+                                            text = { Text("6개월 전") },
+                                            onClick = {
+                                                selectedComparisonRecord = findClosestRecord(sortedRecords, 6)
+                                                showDropdown2 = false
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+
+                            selectedComparisonRecord?.let { record ->
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .wrapContentHeight(),
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0))
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp),
+                                        verticalAlignment = Alignment.Top
+                                    ) {
+                                        val context = LocalContext.current
+                                        record.imagePath?.let { path ->
+                                            val isDrawable = !path.contains("/")
+                                            val imageModifier = Modifier
+                                                .width(100.dp)
+                                                .height(100.dp)
+                                                .padding(end = 12.dp)
+                                                .clip(RoundedCornerShape(12.dp))
+
+                                            if (isDrawable) {
+                                                val resId = context.resources.getIdentifier(
+                                                    path, "drawable", context.packageName
+                                                )
+                                                if (resId != 0) {
+                                                    Image(
+                                                        painter = painterResource(resId),
+                                                        contentDescription = null,
+                                                        modifier = imageModifier,
+                                                        contentScale = ContentScale.Crop
+                                                    )
+                                                }
+                                            } else {
+                                                Image(
+                                                    painter = rememberAsyncImagePainter(path),
+                                                    contentDescription = null,
+                                                    modifier = imageModifier,
+                                                    contentScale = ContentScale.Crop
+                                                )
+                                            }
+                                        }
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = "📅 ${record.date} 운동 기록",
+                                                style = MaterialTheme.typography.titleMedium,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                            record.logs.forEach { log ->
+                                                Text("- ${log.name} (${log.part}): ${log.sets}세트")
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
                     }
+
+                    else -> {
+                        when (viewMode) {
+                            HistoryViewMode.LIST -> {
+                                LazyColumn(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(horizontal = 16.dp),
+                                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    items(sortedRecords) { record ->
+                                        Card(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            shape = RoundedCornerShape(12.dp),
+                                            colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F2FD))
+                                        ) {
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(16.dp),
+                                                verticalAlignment = Alignment.Top
+                                            ) {
+                                                val context = LocalContext.current
+                                                record.imagePath?.let { path ->
+                                                    val isDrawable = !path.contains("/")
+                                                    val imageModifier = Modifier
+                                                        .width(100.dp)
+                                                        .height(100.dp)
+                                                        .padding(end = 12.dp)
+                                                        .clip(RoundedCornerShape(12.dp))
+
+                                                    if (isDrawable) {
+                                                        val resId = context.resources.getIdentifier(
+                                                            path, "drawable", context.packageName
+                                                        )
+                                                        if (resId != 0) {
+                                                            Image(
+                                                                painter = painterResource(resId),
+                                                                contentDescription = null,
+                                                                modifier = imageModifier,
+                                                                contentScale = ContentScale.Crop
+                                                            )
+                                                        }
+                                                    } else {
+                                                        Image(
+                                                            painter = rememberAsyncImagePainter(path),
+                                                            contentDescription = null,
+                                                            modifier = imageModifier,
+                                                            contentScale = ContentScale.Crop
+                                                        )
+                                                    }
+                                                }
+
+                                                Column(modifier = Modifier.weight(1f)) {
+                                                    Text(
+                                                        text = "📅 ${record.date} 운동 기록",
+                                                        style = MaterialTheme.typography.titleMedium,
+                                                        fontWeight = FontWeight.Bold
+                                                    )
+                                                    Spacer(modifier = Modifier.height(4.dp))
+                                                    record.logs.forEach { log ->
+                                                        Text("- ${log.name} (${log.part}): ${log.sets}세트")
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+
+                            HistoryViewMode.GALLERY -> {
+                                LazyVerticalGrid(
+                                    columns = GridCells.Fixed(2),
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    items(sortedRecords) { record ->
+                                        val context = LocalContext.current
+                                        val isDrawable = record.imagePath?.contains("/")?.not() ?: false
+                                        val imageModifier = Modifier
+                                            .fillMaxWidth()
+                                            .aspectRatio(1f)
+                                            .clip(RoundedCornerShape(12.dp))
+
+                                        Card(
+                                            shape = RoundedCornerShape(12.dp),
+                                            modifier = Modifier
+                                                .padding(4.dp),
+                                            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF8E1))
+                                        ) {
+                                            Column(
+                                                modifier = Modifier.padding(8.dp),
+                                                horizontalAlignment = Alignment.CenterHorizontally
+                                            ) {
+                                                if (record.imagePath != null) {
+                                                    if (isDrawable) {
+                                                        val resId = context.resources.getIdentifier(
+                                                            record.imagePath, "drawable", context.packageName
+                                                        )
+                                                        if (resId != 0) {
+                                                            Image(
+                                                                painter = painterResource(resId),
+                                                                contentDescription = null,
+                                                                modifier = imageModifier,
+                                                                contentScale = ContentScale.Crop
+                                                            )
+                                                        }
+                                                    } else {
+                                                        Image(
+                                                            painter = rememberAsyncImagePainter(record.imagePath),
+                                                            contentDescription = null,
+                                                            modifier = imageModifier,
+                                                            contentScale = ContentScale.Crop
+                                                        )
+                                                    }
+                                                }
+                                                Spacer(modifier = Modifier.height(8.dp))
+                                                Text(
+                                                    text = record.date,
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            else -> {}
+                        }
+                    }
+
                 }
             }
         }
+    }
+}
+
+fun findClosestRecord(records: List<WorkoutRecord>, monthsAgo: Int): WorkoutRecord? {
+    val targetDate = LocalDate.now().minusMonths(monthsAgo.toLong())
+    val formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd")
+    return records.minByOrNull {
+        val date = LocalDate.parse(it.date, formatter)
+        ChronoUnit.DAYS.between(date, targetDate).let { Math.abs(it) }
     }
 }
