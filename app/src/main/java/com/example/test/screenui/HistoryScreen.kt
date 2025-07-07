@@ -13,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -136,7 +137,7 @@ fun HistoryScreen(workoutRecords: List<WorkoutRecord>) {
                                         .wrapContentHeight()
                                         .padding(bottom = 16.dp),
                                     shape = RoundedCornerShape(12.dp),
-                                    colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9))
+                                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F0FB))
                                 ) {
                                     Row(
                                         modifier = Modifier
@@ -304,9 +305,9 @@ fun HistoryScreen(workoutRecords: List<WorkoutRecord>) {
                                 ) {
                                     items(sortedRecords) { record ->
                                         Card(
-                                            modifier = Modifier.fillMaxWidth(),
+                                            modifier = Modifier.fillMaxWidth().shadow(4.dp, RoundedCornerShape(16.dp)),
                                             shape = RoundedCornerShape(12.dp),
-                                            colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F2FD))
+                                            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFFFFF))
                                         ) {
                                             Row(
                                                 modifier = Modifier
@@ -384,7 +385,7 @@ fun HistoryScreen(workoutRecords: List<WorkoutRecord>) {
                                             shape = RoundedCornerShape(12.dp),
                                             modifier = Modifier
                                                 .padding(4.dp),
-                                            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF8E1))
+                                            colors = CardDefaults.cardColors(containerColor = Color(0xFFEEE7F8))
                                         ) {
                                             Column(
                                                 modifier = Modifier.padding(8.dp),
