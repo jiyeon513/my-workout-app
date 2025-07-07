@@ -1,4 +1,3 @@
-// 파일 경로: com.example.test.screenui.HomeScreen.kt
 package com.example.test.screenui
 
 import android.content.Context
@@ -27,10 +26,14 @@ import java.io.File
 import java.io.FileOutputStream
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import kotlinx.coroutines.delay
+import androidx.compose.ui.unit.LayoutDirection
 
 @Composable
 fun HomeScreen(onRecordSaved: (WorkoutRecord) -> Unit) {
     val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+    var showSnackbar by remember { mutableStateOf(false) }
 
     val exerciseList = listOf(
         Exercise(1, "벤치프레스", "가슴 근육을 키우는 대표 운동", "가슴"),
@@ -60,9 +63,10 @@ fun HomeScreen(onRecordSaved: (WorkoutRecord) -> Unit) {
                 ExerciseLog(name = exercise.name, sets = sets, date = today, part = exercise.part)
             }
             val imagePath = copyUriToInternalStorage(context, uri)
-            val record = WorkoutRecord(date = today, logs = logs, imagePath = imagePath, timestamp = System.currentTimeMillis() )
+            val record = WorkoutRecord(date = today, logs = logs, imagePath = imagePath, timestamp = System.currentTimeMillis())
             onRecordSaved(record)
             selectedExercises.clear()
+            showSnackbar = true
         }
     }
 
@@ -76,6 +80,7 @@ fun HomeScreen(onRecordSaved: (WorkoutRecord) -> Unit) {
             val record = WorkoutRecord(date = today, logs = logs, imagePath = imagePath)
             onRecordSaved(record)
             selectedExercises.clear()
+            showSnackbar = true
         }
     }
 
@@ -89,158 +94,206 @@ fun HomeScreen(onRecordSaved: (WorkoutRecord) -> Unit) {
         else -> emptyList()
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        TabRow(selectedTabIndex = selectedTabIndex) {
-            Tab(selected = selectedTabIndex == 0, onClick = { selectedTabIndex = 0 }) {
-                Text("전체 보기", modifier = Modifier.padding(16.dp))
-            }
-            Tab(selected = selectedTabIndex == 1, onClick = { selectedTabIndex = 1 }) {
-                Text("선택 보기", modifier = Modifier.padding(16.dp))
+    Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) { data ->
+                Snackbar(
+                    containerColor = Color.White,
+                    contentColor = Color.Black,
+                    snackbarData = data
+                )
             }
         }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(
+                    start = innerPadding.calculateStartPadding(LayoutDirection.Ltr),
+                    top = innerPadding.calculateTopPadding(),
+                    end = innerPadding.calculateEndPadding(LayoutDirection.Ltr),
+                    bottom = 0.dp
+                )
+        ) {
 
-        if (selectedTabIndex == 0) {
-            Box(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                contentAlignment = Alignment.CenterStart
-            ) {
-                Button(onClick = { showPartDropdown = true }) {
-                    Text(if (selectedPart.isEmpty()) "필터: 전체" else "필터: $selectedPart")
+            // Snackbar 실행
+            LaunchedEffect(showSnackbar) {
+                if (showSnackbar) {
+                    val snackbarJob = snackbarHostState.showSnackbar(
+                        message = " ✅ 기록 생성이 완료되었습니다!"
+                    )
+                    delay(1000) // 2초 후 자동 종료
+                    snackbarHostState.currentSnackbarData?.dismiss()
+                    showSnackbar = false
                 }
+            }
 
-                DropdownMenu(expanded = showPartDropdown, onDismissRequest = { showPartDropdown = false }) {
-                    DropdownMenuItem(text = { Text("전체") }, onClick = {
-                        selectedPart = ""
-                        showPartDropdown = false
-                    })
-                    listOf("즐겨찾기", "가슴", "등", "어깨", "하체", "복부").forEach { part ->
-                        DropdownMenuItem(
-                            text = { Text(part) },
-                            onClick = {
-                                selectedPart = part
-                                showPartDropdown = false
-                            }
-                        )
+
+            TabRow(selectedTabIndex = selectedTabIndex) {
+                Tab(selected = selectedTabIndex == 0, onClick = { selectedTabIndex = 0 }) {
+                    Text("전체 보기", modifier = Modifier.padding(16.dp))
+                }
+                Tab(selected = selectedTabIndex == 1, onClick = { selectedTabIndex = 1 }) {
+                    Text("선택 보기", modifier = Modifier.padding(16.dp))
+                }
+            }
+
+            if (selectedTabIndex == 0) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    Button(onClick = { showPartDropdown = true }) {
+                        Text(if (selectedPart.isEmpty()) "필터: 전체" else "필터: $selectedPart")
+                    }
+
+                    DropdownMenu(expanded = showPartDropdown, onDismissRequest = { showPartDropdown = false }) {
+                        DropdownMenuItem(text = { Text("전체") }, onClick = {
+                            selectedPart = ""
+                            showPartDropdown = false
+                        })
+                        listOf("즐겨찾기", "가슴", "등", "어깨", "하체", "복부").forEach { part ->
+                            DropdownMenuItem(
+                                text = { Text(part) },
+                                onClick = {
+                                    selectedPart = part
+                                    showPartDropdown = false
+                                }
+                            )
+                        }
                     }
                 }
             }
-        }
 
-        LazyColumn(modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 12.dp)) {
-            items(filteredList) { exercise ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 6.dp)
-                        .shadow(4.dp, RoundedCornerShape(16.dp)),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = if ((selectedExercises[exercise] ?: 0) > 0) Color(0xFFBBDEFB) else Color(0xFFF8F9FA)
-                    )
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                "${exercise.name} (${exercise.part})",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 18.sp,
-                                modifier = Modifier.weight(1f)
-                            )
-                            IconToggleButton(
-                                checked = exercise.id in favorites,
-                                onCheckedChange = {
-                                    if (exercise.id in favorites) favorites.remove(exercise.id)
-                                    else favorites.add(exercise.id)
-                                }
-                            ) {
-                                Text(if (exercise.id in favorites) "★" else "☆", fontSize = 20.sp)
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(exercise.description)
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("세트 수: ", fontWeight = FontWeight.SemiBold)
-                            var expanded by remember { mutableStateOf(false) }
-                            Box {
-                                Button(
-                                    onClick = { expanded = true },
-                                    modifier = Modifier.height(32.dp).width(70.dp),
-                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+            LazyColumn(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp)
+            ) {
+                items(filteredList) { exercise ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 6.dp)
+                            .shadow(4.dp, RoundedCornerShape(16.dp)),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = if ((selectedExercises[exercise] ?: 0) > 0) Color(0xFFBBDEFB) else Color(0xFFF8F9FA)
+                        )
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    "${exercise.name} (${exercise.part})",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 18.sp,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                IconToggleButton(
+                                    checked = exercise.id in favorites,
+                                    onCheckedChange = {
+                                        if (exercise.id in favorites) favorites.remove(exercise.id)
+                                        else favorites.add(exercise.id)
+                                    }
                                 ) {
-                                    Text(
-                                        if ((selectedExercises[exercise] ?: 0) == 0) "선택"
-                                        else "${selectedExercises[exercise]}세트",
-                                        fontSize = 15.sp
-                                    )
+                                    Text(if (exercise.id in favorites) "★" else "☆", fontSize = 20.sp)
                                 }
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(exercise.description)
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("세트 수 :   ", fontWeight = FontWeight.SemiBold)
+                                var expanded by remember { mutableStateOf(false) }
+                                Box {
+                                    Button(
+                                        onClick = { expanded = true },
+                                        modifier = Modifier
+                                            .height(28.dp)
+                                            .width(70.dp),
+                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                    ) {
+                                        Text(
+                                            if ((selectedExercises[exercise] ?: 0) == 0) "선택"
+                                            else "${selectedExercises[exercise]}세트",
+                                            fontSize = 14.sp
+                                        )
+                                    }
 
-                                DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                                    (1..5).forEach { count ->
+                                    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                                        (1..5).forEach { count ->
+                                            DropdownMenuItem(
+                                                text = { Text("$count 세트") },
+                                                onClick = {
+                                                    selectedExercises[exercise] = count
+                                                    expanded = false
+                                                }
+                                            )
+                                        }
                                         DropdownMenuItem(
-                                            text = { Text("$count 세트") },
+                                            text = { Text("선택 취소") },
                                             onClick = {
-                                                selectedExercises[exercise] = count
+                                                selectedExercises.remove(exercise)
                                                 expanded = false
                                             }
                                         )
                                     }
-                                    DropdownMenuItem(
-                                        text = { Text("선택 취소") },
-                                        onClick = {
-                                            selectedExercises.remove(exercise)
-                                            expanded = false
-                                        }
-                                    )
                                 }
                             }
                         }
                     }
                 }
             }
-        }
 
-        if (showDialog) {
-            AlertDialog(
-                onDismissRequest = { showDialog = false },
-                title = { Text("사진 선택") },
-                text = { Text("어떤 방식으로 사진을 첨부할까요?") },
-                confirmButton = {
-                    TextButton(onClick = {
-                        showDialog = false
-                        galleryLauncher.launch("image/*")
-                    }) {
-                        Text("갤러리")
+            if (showDialog) {
+                AlertDialog(
+                    onDismissRequest = { showDialog = false },
+                    title = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(text = "📷")
+                            Text(text = " 사진 선택", fontWeight = FontWeight.SemiBold)
+                            Spacer(modifier = Modifier.width(8.dp))
+                        }
+                    },
+                    text = { Text("사진 첨부 방식을 선택해 주세요") },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            showDialog = false
+                            galleryLauncher.launch("image/*")
+                        }) {
+                            Text("갤러리")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = {
+                            showDialog = false
+                            cameraLauncher.launch(null)
+                        }) {
+                            Text("카메라")
+                        }
+                    }
+                )
+            }
+
+            Button(
+                onClick = {
+                    if (selectedExercises.isNotEmpty()) {
+                        showDialog = true
                     }
                 },
-                dismissButton = {
-                    TextButton(onClick = {
-                        showDialog = false
-                        cameraLauncher.launch(null)
-                    }) {
-                        Text("카메라")
-                    }
-                }
-            )
-        }
-
-        Button(
-            onClick = {
-                if (selectedExercises.isNotEmpty()) {
-                    showDialog = true
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            enabled = selectedExercises.isNotEmpty()
-        ) {
-            Text("✅ 오늘의 운동 기록 생성")
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                enabled = selectedExercises.isNotEmpty()
+            ) {
+                Text("✅ 오늘의 운동 기록 생성")
+            }
         }
     }
 }
 
-// ✅ 비트맵을 내부 저장소에 저장
 fun saveBitmapToInternalStorage(context: Context, bitmap: Bitmap): String {
     val filename = "IMG_${System.currentTimeMillis()}.jpg"
     val file = File(context.filesDir, filename)
@@ -251,7 +304,6 @@ fun saveBitmapToInternalStorage(context: Context, bitmap: Bitmap): String {
     return file.absolutePath
 }
 
-// ✅ Uri(갤러리) 이미지도 내부 저장소로 복사
 fun copyUriToInternalStorage(context: Context, uri: Uri): String {
     val inputStream = context.contentResolver.openInputStream(uri)!!
     val filename = "IMG_${System.currentTimeMillis()}.jpg"
