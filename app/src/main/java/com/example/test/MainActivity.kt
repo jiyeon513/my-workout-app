@@ -34,7 +34,8 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import androidx.compose.ui.tooling.preview.Preview
 import android.graphics.Bitmap
-
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.ui.graphics.Color
 
 
 class MainActivity : ComponentActivity() {
@@ -83,16 +84,19 @@ class MainActivity : ComponentActivity() {
     fun MyMultiPageApp() {
         val userRecords = workoutRecords.filter { it.userId == currentUserId }
         val pageTitle = when (currentPage) {
-            "home" -> ""
-            "history" -> "   나의 운동 일기"
-            "settings" -> "   운동 분석하기"
+            "home" -> "  오늘의 운동 기록"
+            "history" -> "   나의 운동 갤러리"
+            "settings" -> "   운동 분석 차트"
             "mypage" -> "   마이페이지"
             else -> ""
         }
         Scaffold(
+
             topBar = {
                 if (currentPage in listOf("home", "history", "settings")) {
                     TopAppBar(
+                        modifier = Modifier
+                            .padding(top = 50.dp),
                         title = {
                             Text(pageTitle, style = MaterialTheme.typography.titleLarge.copy(
                                 fontSize = 24.sp, fontWeight = FontWeight.Bold))
@@ -102,9 +106,9 @@ class MainActivity : ComponentActivity() {
                                 prevPage = currentPage
                                 currentPage = "mypage"
                             }) {
-                                Icon(Icons.Default.Person, contentDescription = "마이페이지", modifier = Modifier.size(24.dp))
+                                Icon(Icons.Default.AccountCircle, contentDescription = "마이페이지", tint = Color(0xFFBDBDBD), modifier = Modifier.size(32.dp))
                             }
-                        }
+                        },
                     )
                 }
             },
@@ -117,6 +121,12 @@ class MainActivity : ComponentActivity() {
                             label = { Text("일기장") }, icon = { Text("📔") })
                         NavigationBarItem(selected = currentPage == "settings", onClick = { currentPage = "settings" },
                             label = { Text("AI PT쌤") }, icon = { Text("🤖") })
+                        NavigationBarItem(
+                            selected = currentPage == "chat",
+                            onClick = { currentPage = "chat" },
+                            label = { Text("채팅") },
+                            icon = { Text("💬") }
+                        )
                     }
                 }
             }
@@ -124,7 +134,7 @@ class MainActivity : ComponentActivity() {
             Box(modifier = Modifier
                 .fillMaxSize()
                 .padding(
-                    top = 2.dp,
+                    top = 50.dp,
                     start = innerPadding.calculateStartPadding(LayoutDirection.Ltr),
                     end = innerPadding.calculateEndPadding(LayoutDirection.Ltr),
                     bottom = innerPadding.calculateBottomPadding()
@@ -166,6 +176,7 @@ class MainActivity : ComponentActivity() {
                         currentUserId = currentUserId!!,
                         onBackClick = { currentPage = prevPage }
                     )
+                    "chat" -> ChatScreen()
 
                 }
             }

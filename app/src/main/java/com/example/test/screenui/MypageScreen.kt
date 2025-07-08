@@ -23,6 +23,8 @@ import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowForward
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,12 +46,31 @@ fun MypageScreen(
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // 상단 제목
-        Text(
-            text = "  My Page",
-            style = MaterialTheme.typography.headlineLarge,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
+        Spacer(modifier = Modifier.height(30.dp))      // 상단 제목
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp)
+        ) {
+            Text(
+                text = "  My Page",
+                style = MaterialTheme.typography.headlineLarge,
+                modifier = Modifier.weight(1f) // 왼쪽 정렬
+            )
+
+            IconButton(
+                onClick = { onBackClick() },
+                modifier = Modifier.size(32.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ArrowForward,
+                    contentDescription = "뒤로가기",
+                    tint = Color(0xFFBDBDBD)
+                )
+            }
+        }
+
 
         // "00님의 운동 캘린더"
         Text(
@@ -66,7 +87,7 @@ fun MypageScreen(
                 append(" 님의 운동 캘린더")
             },
             style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(top = 20.dp, bottom = 12.dp)
+            modifier = Modifier.padding(top = 40.dp, bottom = 12.dp)
         )
 
         Divider(
