@@ -17,3 +17,12 @@ data class User(
     val password: String,
     val age: Int
 )
+
+
+data class Badge(
+    val id: String,
+    val name: String,
+    val description: String,
+    val icon: String, // drawable 리소스 이름 (ex: badge_back)
+    val isUnlocked: Boolean
+)

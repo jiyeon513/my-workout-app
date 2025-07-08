@@ -1,49 +1,52 @@
 package com.example.test
 
-import android.os.Bundle
 import android.content.ContentValues
+import android.content.Context
 import android.graphics.BitmapFactory
 import android.os.Build
+import android.os.Bundle
 import android.provider.MediaStore
-import android.content.Context
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.*
 import com.example.test.model.ExerciseLog
 import com.example.test.model.WorkoutRecord
-import com.example.test.screenui.HomeScreen
-import com.example.test.screenui.HistoryScreen
-import com.example.test.screenui.SettingsScreen
-import com.example.test.screenui.MypageScreen
+import com.example.test.model.Badge
+import com.example.test.screenui.*
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.io.File
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import androidx.compose.ui.tooling.preview.Preview
 import android.graphics.Bitmap
-import com.example.test.screenui.LoginScreen
-import com.example.test.screenui.SignUpScreen
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.ui.unit.sp
+
+
 
 class MainActivity : ComponentActivity() {
     private val workoutRecords = mutableStateListOf<WorkoutRecord>()
     private var currentUserId by mutableStateOf<String?>(null)
-    private var currentPage by mutableStateOf("login") // ← 기본값을 login으로 변경
+    private var currentPage by mutableStateOf("login")
+    private var prevPage by mutableStateOf("home")
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // ✅ 갤러리에 비포/애프터 이미지 복사
         copyDrawableToGallery(this, "before", "before_photo")
         copyDrawableToGallery(this, "after", "after_photo")
 
@@ -90,63 +93,52 @@ class MainActivity : ComponentActivity() {
             topBar = {
                 if (currentPage in listOf("home", "history", "settings")) {
                     TopAppBar(
-                        title = {Text(pageTitle,
-                            style = MaterialTheme.typography.titleLarge
-                                .copy(
-                                    fontSize = 24.sp,
-                                    fontWeight = FontWeight.Bold
-                                )) },
+                        title = {
+                            Text(pageTitle, style = MaterialTheme.typography.titleLarge.copy(
+                                fontSize = 24.sp, fontWeight = FontWeight.Bold))
+                        },
                         actions = {
-                            IconButton(onClick = { currentPage = "mypage" }) {
-                                Icon(Icons.Default.Person, contentDescription = "마이페이지",modifier = Modifier.size(24.dp))
+                            IconButton(onClick = {
+                                prevPage = currentPage
+                                currentPage = "mypage"
+                            }) {
+                                Icon(Icons.Default.Person, contentDescription = "마이페이지", modifier = Modifier.size(24.dp))
                             }
                         }
                     )
                 }
             },
             bottomBar = {
-                if (currentPage != "login" && currentPage != "signup" && currentPage != "mypage") {
+                if (currentPage !in listOf("login", "signup", "mypage")) {
                     NavigationBar {
-                        NavigationBarItem(
-                            selected = currentPage == "home",
-                            onClick = { currentPage = "home" },
-                            label = { Text("기록 생성") },
-                            icon = { Text("🏋️") }
-                        )
-                        NavigationBarItem(
-                            selected = currentPage == "history",
-                            onClick = { currentPage = "history" },
-                            label = { Text("일기장") },
-                            icon = { Text("📔") }
-                        )
-                        NavigationBarItem(
-                            selected = currentPage == "settings",
-                            onClick = { currentPage = "settings" },
-                            label = { Text("AI PT쌤") },
-                            icon = { Text("🤖") }
-                        )
+                        NavigationBarItem(selected = currentPage == "home", onClick = { currentPage = "home" },
+                            label = { Text("기록 생성") }, icon = { Text("🏋️") })
+                        NavigationBarItem(selected = currentPage == "history", onClick = { currentPage = "history" },
+                            label = { Text("일기장") }, icon = { Text("📔") })
+                        NavigationBarItem(selected = currentPage == "settings", onClick = { currentPage = "settings" },
+                            label = { Text("AI PT쌤") }, icon = { Text("🤖") })
                     }
                 }
             }
-        )
-        { innerPadding ->
-
-            Box(modifier = Modifier.fillMaxSize().padding(top = 2.dp, // 👈 이거 핵심
-                start = innerPadding.calculateStartPadding(LayoutDirection.Ltr),
-                end = innerPadding.calculateEndPadding(LayoutDirection.Ltr),
-                bottom = innerPadding.calculateBottomPadding())) {
+        ) { innerPadding ->
+            Box(modifier = Modifier
+                .fillMaxSize()
+                .padding(
+                    top = 2.dp,
+                    start = innerPadding.calculateStartPadding(LayoutDirection.Ltr),
+                    end = innerPadding.calculateEndPadding(LayoutDirection.Ltr),
+                    bottom = innerPadding.calculateBottomPadding()
+                )) {
                 when (currentPage) {
                     "login" -> LoginScreen(
                         onLoginSuccess = { userId ->
                             currentUserId = userId
                             val userHasNoRecord = workoutRecords.none { it.userId == userId }
-
                             if (userHasNoRecord) {
                                 val dummy = generateDummyWorkoutRecords(userId)
                                 workoutRecords.addAll(dummy)
                                 saveWorkoutRecordsToFile()
                             }
-
                             currentPage = "home"
                         },
                         onSignupClick = { currentPage = "signup" }
@@ -159,20 +151,23 @@ class MainActivity : ComponentActivity() {
                         onBackClick = { currentPage = "login" }
                     )
                     "home" -> HomeScreen(
-                        currentUserId= currentUserId!!,
-                        userRecords = userRecords,  // ✅ 필터된 데이터 전달
+                        currentUserId = currentUserId!!,
+                        userRecords = userRecords,
                         onRecordSaved = { record ->
                             val fullRecord = record.copy(userId = currentUserId!!)
                             workoutRecords.add(fullRecord)
                             saveWorkoutRecordsToFile()
                         }
                     )
-
                     "history" -> HistoryScreen(userRecords)
                     "settings" -> SettingsScreen(userRecords)
-                    "mypage" -> MypageScreen(workoutRecords, currentUserId !!) //userId = currentUserId ?: "Unknown"
-                }
+                    "mypage" -> MypageScreen(
+                        allRecords = workoutRecords,
+                        currentUserId = currentUserId!!,
+                        onBackClick = { currentPage = prevPage }
+                    )
 
+                }
             }
         }
     }
@@ -183,7 +178,6 @@ class MainActivity : ComponentActivity() {
         MyMultiPageApp()
     }
 
-    // ✅ 더미 생성 함수 (5일 간격, 날짜별 before/after 이미지 분기)
     private fun generateDummyWorkoutRecords(userId: String): List<WorkoutRecord> {
         val dummyExercises = listOf(
             "벤치프레스" to "가슴",
@@ -197,25 +191,25 @@ class MainActivity : ComponentActivity() {
         return (1..150 step 5).map { i ->
             val dateObj = today.minusDays(i.toLong())
             val dateStr = dateObj.format(DateTimeFormatter.ofPattern("yyyy.MM.dd"))
-
             val threshold = LocalDate.of(2025, 6, 1)
             val image = if (dateObj.isAfter(threshold)) "after" else "before"
-
             val logs = dummyExercises.map { (name, part) ->
                 ExerciseLog(name = name, sets = (1..4).random(), date = dateStr, part = part)
             }
-
-            WorkoutRecord(userId =  userId , date = dateStr, logs = logs, imagePath = image, timestamp = dateObj.toEpochDay() * 1000L)
+            WorkoutRecord(
+                userId = userId,
+                date = dateStr,
+                logs = logs,
+                imagePath = image,
+                timestamp = dateObj.toEpochDay() * 1000L
+            )
         }
     }
 
-    // ✅ drawable 리소스를 갤러리에 복사
     private fun copyDrawableToGallery(context: Context, drawableName: String, displayName: String) {
         val resId = context.resources.getIdentifier(drawableName, "drawable", context.packageName)
         if (resId == 0) return
-
         val bitmap = BitmapFactory.decodeResource(context.resources, resId)
-
         val contentValues = ContentValues().apply {
             put(MediaStore.Images.Media.DISPLAY_NAME, "${displayName}_${System.currentTimeMillis()}.jpg")
             put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
@@ -223,7 +217,6 @@ class MainActivity : ComponentActivity() {
                 put(MediaStore.Images.Media.IS_PENDING, 1)
             }
         }
-
         val resolver = context.contentResolver
         val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
         uri?.let {
@@ -237,4 +230,40 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    // ✅ 배지 계산 함수
+    fun calculateBadges(records: List<WorkoutRecord>, userId: String): List<Badge> {
+        val userRecords = records.filter { it.userId == userId }
+
+        val totalBackSets = userRecords.flatMap { it.logs }
+            .filter { it.part == "등" }
+            .sumOf { it.sets }
+
+        val totalLegReps = userRecords.flatMap { it.logs }
+            .filter { it.part == "하체" }
+            .sumOf { it.sets }
+
+
+//        println("🔍 [DEBUG] 등 세트 수: $totalBackSets / 하체 세트 수: $totalLegSets")
+
+
+        return listOf(
+            Badge(
+                id = "back_100",
+                name = "등근육 장인",
+                description = "등 운동 100세트 완료",
+                icon = "badge_back",
+                isUnlocked = totalBackSets >= 100
+            ),
+            Badge(
+                id = "leg_50",
+                name = "강철 하체",
+                description = "하체 운동 50세트 완료",
+                icon = "badge_leg",
+                isUnlocked = totalLegReps >= 50
+            )
+        )
+    }
+
+
 }
