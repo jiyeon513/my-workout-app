@@ -110,7 +110,7 @@ fun HistoryScreen(workoutRecords: List<WorkoutRecord>) {
                     shape = RoundedCornerShape(20.dp),
                     modifier = Modifier
                         .height(36.dp) // 버튼 높이 줄이기
-                        .width(120.dp), // 버튼 너비 조정
+                        .width(130.dp), // 버튼 너비 조정
                 ) {
                     Text("눈바디 비교")
                 }

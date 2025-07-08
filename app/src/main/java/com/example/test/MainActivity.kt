@@ -30,8 +30,10 @@ import com.example.test.screenui.LoginScreen
 import com.example.test.screenui.SignUpScreen
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.sp
 
 class MainActivity : ComponentActivity() {
     private val workoutRecords = mutableStateListOf<WorkoutRecord>()
@@ -77,21 +79,33 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun MyMultiPageApp() {
         val userRecords = workoutRecords.filter { it.userId == currentUserId }
+        val pageTitle = when (currentPage) {
+            "home" -> ""
+            "history" -> "   나의 운동 일기"
+            "settings" -> "   운동 분석하기"
+            "mypage" -> "   마이페이지"
+            else -> ""
+        }
         Scaffold(
             topBar = {
                 if (currentPage in listOf("home", "history", "settings")) {
                     TopAppBar(
-                        title = {},
+                        title = {Text(pageTitle,
+                            style = MaterialTheme.typography.titleLarge
+                                .copy(
+                                    fontSize = 24.sp,
+                                    fontWeight = FontWeight.Bold
+                                )) },
                         actions = {
                             IconButton(onClick = { currentPage = "mypage" }) {
-                                Icon(Icons.Default.Person, contentDescription = "마이페이지")
+                                Icon(Icons.Default.Person, contentDescription = "마이페이지",modifier = Modifier.size(24.dp))
                             }
                         }
                     )
                 }
             },
             bottomBar = {
-                if (currentPage != "login" && currentPage != "signup") {
+                if (currentPage != "login" && currentPage != "signup" && currentPage != "mypage") {
                     NavigationBar {
                         NavigationBarItem(
                             selected = currentPage == "home",
@@ -116,7 +130,11 @@ class MainActivity : ComponentActivity() {
             }
         )
         { innerPadding ->
-            Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+
+            Box(modifier = Modifier.fillMaxSize().padding(top = 2.dp, // 👈 이거 핵심
+                start = innerPadding.calculateStartPadding(LayoutDirection.Ltr),
+                end = innerPadding.calculateEndPadding(LayoutDirection.Ltr),
+                bottom = innerPadding.calculateBottomPadding())) {
                 when (currentPage) {
                     "login" -> LoginScreen(
                         onLoginSuccess = { userId ->
@@ -152,7 +170,7 @@ class MainActivity : ComponentActivity() {
 
                     "history" -> HistoryScreen(userRecords)
                     "settings" -> SettingsScreen(userRecords)
-                    "mypage" -> MypageScreen()
+                    "mypage" -> MypageScreen(workoutRecords, currentUserId !!) //userId = currentUserId ?: "Unknown"
                 }
 
             }
@@ -184,7 +202,7 @@ class MainActivity : ComponentActivity() {
             val image = if (dateObj.isAfter(threshold)) "after" else "before"
 
             val logs = dummyExercises.map { (name, part) ->
-                ExerciseLog(name = name, sets = (2..5).random(), date = dateStr, part = part)
+                ExerciseLog(name = name, sets = (1..4).random(), date = dateStr, part = part)
             }
 
             WorkoutRecord(userId =  userId , date = dateStr, logs = logs, imagePath = image, timestamp = dateObj.toEpochDay() * 1000L)
