@@ -5,8 +5,15 @@ data class Exercise(val id: Int, val name: String, val description: String, val 
 data class ExerciseLog(val name: String, val sets: Int, val date: String, val part: String)
 
 data class WorkoutRecord(
+    val userId: String,
     val date: String,
     val logs: List<ExerciseLog>,
     val imagePath: String? = null,
-    val timestamp: Long = System.currentTimeMillis()  // ✅ 추가!
+    val timestamp: Long = System.currentTimeMillis()
+)
+
+data class User(
+    val id: String,
+    val password: String,
+    val age: Int
 )

@@ -47,7 +47,7 @@ fun HistoryScreen(workoutRecords: List<WorkoutRecord>) {
                     Text(
                         "  나의 운동 일기",
                         style = MaterialTheme.typography.titleLarge.copy(
-                            fontSize = 26.sp,
+                            fontSize = 20.sp,
                             fontWeight = FontWeight.Bold
                         )
                     )
@@ -76,7 +76,10 @@ fun HistoryScreen(workoutRecords: List<WorkoutRecord>) {
                 Box {
                     Button(
                         onClick = { showDropdown = true },
-                        shape = RoundedCornerShape(20.dp)
+                        shape = RoundedCornerShape(20.dp) ,
+                        modifier = Modifier
+                            .height(36.dp) // 버튼 높이 줄이기
+                            .width(110.dp), // 버튼 너비 조정
                     ) {
                         Text("보기 모드 선택")
                     }
@@ -104,9 +107,12 @@ fun HistoryScreen(workoutRecords: List<WorkoutRecord>) {
 
                 Button(
                     onClick = { viewMode = HistoryViewMode.COMPARE },
-                    shape = RoundedCornerShape(20.dp)
+                    shape = RoundedCornerShape(20.dp),
+                    modifier = Modifier
+                        .height(36.dp) // 버튼 높이 줄이기
+                        .width(120.dp), // 버튼 너비 조정
                 ) {
-                    Text("운동 기록 비교")
+                    Text("눈바디 비교")
                 }
             }
 
@@ -149,8 +155,8 @@ fun HistoryScreen(workoutRecords: List<WorkoutRecord>) {
                                         latestRecord.imagePath?.let { path ->
                                             val isDrawable = !path.contains("/")
                                             val imageModifier = Modifier
-                                                .width(100.dp)
-                                                .height(100.dp)
+                                                .width(130.dp)
+                                                .height(130.dp)
                                                 .padding(end = 12.dp)
                                                 .clip(RoundedCornerShape(12.dp))
 
@@ -177,13 +183,15 @@ fun HistoryScreen(workoutRecords: List<WorkoutRecord>) {
                                         }
                                         Column(modifier = Modifier.weight(1f)) {
                                             Text(
-                                                text = "📅 최근 운동 기록",
+                                                text = "▶ 최근 운동 기록",
                                                 style = MaterialTheme.typography.titleMedium,
                                                 fontWeight = FontWeight.Bold
                                             )
                                             Spacer(modifier = Modifier.height(4.dp))
                                             latestRecord.logs.forEach { log ->
-                                                Text("- ${log.name} (${log.part}): ${log.sets}세트")
+                                                Text(text="   ${log.name} (${log.part}): ${log.sets}세트",
+                                                    fontSize = 11.sp)
+
                                             }
                                         }
                                     }
@@ -192,17 +200,28 @@ fun HistoryScreen(workoutRecords: List<WorkoutRecord>) {
 
                             Box(
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 8.dp),
-                                contentAlignment = Alignment.Center
+                                    .fillMaxWidth(),
+                                contentAlignment = Alignment.TopStart
                             ) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Row(   // 버튼 + 텍스트를 수평 정렬
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
                                     Button(
                                         onClick = { showDropdown2 = true },
-                                        shape = RoundedCornerShape(20.dp)
+                                        shape = RoundedCornerShape(20.dp),
+                                        modifier = Modifier
+                                            .height(30.dp) // 버튼 높이 줄이기
+                                            .width(90.dp), // 버튼 너비 조정
+                                        contentPadding = PaddingValues(horizontal = 0.dp, vertical = 0.dp)
                                     ) {
-                                        Text("📅 날짜 선택", fontSize = 16.sp)
+                                        Text("과거 기록 보기", fontSize = 10.sp)
                                     }
+                                    Text(
+                                        text = " 현재와 과거 눈바디를 비교해 보세요!",
+                                        fontSize = 12.sp,
+                                        color = Color.DarkGray
+                                    )
                                     DropdownMenu(
                                         expanded = showDropdown2,
                                         onDismissRequest = { showDropdown2 = false }
@@ -239,7 +258,7 @@ fun HistoryScreen(workoutRecords: List<WorkoutRecord>) {
                                         .fillMaxWidth()
                                         .wrapContentHeight(),
                                     shape = RoundedCornerShape(12.dp),
-                                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0))
+                                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F0FB))
                                 ) {
                                     Row(
                                         modifier = Modifier
@@ -251,8 +270,8 @@ fun HistoryScreen(workoutRecords: List<WorkoutRecord>) {
                                         record.imagePath?.let { path ->
                                             val isDrawable = !path.contains("/")
                                             val imageModifier = Modifier
-                                                .width(100.dp)
-                                                .height(100.dp)
+                                                .width(130.dp)
+                                                .height(130.dp)
                                                 .padding(end = 12.dp)
                                                 .clip(RoundedCornerShape(12.dp))
 
@@ -279,13 +298,14 @@ fun HistoryScreen(workoutRecords: List<WorkoutRecord>) {
                                         }
                                         Column(modifier = Modifier.weight(1f)) {
                                             Text(
-                                                text = "📅 ${record.date} 운동 기록",
+                                                text = "▶ ${record.date}",
                                                 style = MaterialTheme.typography.titleMedium,
                                                 fontWeight = FontWeight.Bold
                                             )
                                             Spacer(modifier = Modifier.height(4.dp))
                                             record.logs.forEach { log ->
-                                                Text("- ${log.name} (${log.part}): ${log.sets}세트")
+                                                Text(text="   ${log.name} (${log.part}): ${log.sets}세트",
+                                                    fontSize = 11.sp)
                                             }
                                         }
                                     }
@@ -348,13 +368,14 @@ fun HistoryScreen(workoutRecords: List<WorkoutRecord>) {
 
                                                 Column(modifier = Modifier.weight(1f)) {
                                                     Text(
-                                                        text = "📅 ${record.date} 운동 기록",
+                                                        text = "\uD83D\uDCCD ${record.date} 운동 기록",
                                                         style = MaterialTheme.typography.titleMedium,
                                                         fontWeight = FontWeight.Bold
                                                     )
                                                     Spacer(modifier = Modifier.height(4.dp))
                                                     record.logs.forEach { log ->
-                                                        Text("- ${log.name} (${log.part}): ${log.sets}세트")
+                                                        Text(text="   ${log.name} (${log.part}): ${log.sets}세트",
+                                                            fontSize = 11.sp)
                                                     }
                                                 }
                                             }
@@ -384,8 +405,9 @@ fun HistoryScreen(workoutRecords: List<WorkoutRecord>) {
                                         Card(
                                             shape = RoundedCornerShape(12.dp),
                                             modifier = Modifier
-                                                .padding(4.dp),
-                                            colors = CardDefaults.cardColors(containerColor = Color(0xFFEEE7F8))
+                                                .padding(4.dp)
+                                                .shadow(4.dp, RoundedCornerShape(16.dp)),
+                                            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFFFFF))
                                         ) {
                                             Column(
                                                 modifier = Modifier.padding(8.dp),

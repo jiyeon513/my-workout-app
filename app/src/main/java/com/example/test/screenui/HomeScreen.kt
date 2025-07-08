@@ -30,7 +30,7 @@ import kotlinx.coroutines.delay
 import androidx.compose.ui.unit.LayoutDirection
 
 @Composable
-fun HomeScreen(onRecordSaved: (WorkoutRecord) -> Unit) {
+fun HomeScreen(currentUserId: String, userRecords: List<WorkoutRecord>, onRecordSaved: (WorkoutRecord) -> Unit) {
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     var showSnackbar by remember { mutableStateOf(false) }
@@ -63,7 +63,7 @@ fun HomeScreen(onRecordSaved: (WorkoutRecord) -> Unit) {
                 ExerciseLog(name = exercise.name, sets = sets, date = today, part = exercise.part)
             }
             val imagePath = copyUriToInternalStorage(context, uri)
-            val record = WorkoutRecord(date = today, logs = logs, imagePath = imagePath, timestamp = System.currentTimeMillis())
+            val record = WorkoutRecord(userId= currentUserId ,date = today, logs = logs, imagePath = imagePath, timestamp = System.currentTimeMillis())
             onRecordSaved(record)
             selectedExercises.clear()
             showSnackbar = true
@@ -77,7 +77,7 @@ fun HomeScreen(onRecordSaved: (WorkoutRecord) -> Unit) {
                 ExerciseLog(name = exercise.name, sets = sets, date = today, part = exercise.part)
             }
             val imagePath = saveBitmapToInternalStorage(context, bitmap)
-            val record = WorkoutRecord(date = today, logs = logs, imagePath = imagePath)
+            val record = WorkoutRecord(userId = currentUserId, date = today, logs = logs, imagePath = imagePath)
             onRecordSaved(record)
             selectedExercises.clear()
             showSnackbar = true
