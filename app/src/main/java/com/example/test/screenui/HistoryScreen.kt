@@ -183,7 +183,7 @@ fun HistoryScreen(workoutRecords: List<WorkoutRecord>) {
                                         }
                                         Column(modifier = Modifier.weight(1f)) {
                                             Text(
-                                                text = "▶ 최근 운동 기록",
+                                                text = "\uD83D\uDCCD 최근 운동 기록",
                                                 style = MaterialTheme.typography.titleMedium,
                                                 fontWeight = FontWeight.Bold
                                             )
@@ -298,7 +298,7 @@ fun HistoryScreen(workoutRecords: List<WorkoutRecord>) {
                                         }
                                         Column(modifier = Modifier.weight(1f)) {
                                             Text(
-                                                text = "▶ ${record.date}",
+                                                text = "\uD83D\uDCCD ${record.date}",
                                                 style = MaterialTheme.typography.titleMedium,
                                                 fontWeight = FontWeight.Bold
                                             )

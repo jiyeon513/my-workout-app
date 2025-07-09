@@ -56,6 +56,7 @@ dependencies {
     implementation("androidx.compose.material:material:1.5.1")
     implementation("androidx.compose.runtime:runtime:1.5.1")
     implementation("androidx.compose.ui:ui-util:1.5.1")
+    implementation(libs.androidx.appcompat)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

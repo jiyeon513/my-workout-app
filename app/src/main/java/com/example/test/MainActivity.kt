@@ -93,13 +93,27 @@ class MainActivity : ComponentActivity() {
         Scaffold(
 
             topBar = {
-                if (currentPage in listOf("home", "history", "settings")) {
+                if (currentPage in listOf( "history", "settings")) {
                     TopAppBar(
                         modifier = Modifier
                             .padding(top = 50.dp),
                         title = {
                             Text(pageTitle, style = MaterialTheme.typography.titleLarge.copy(
                                 fontSize = 24.sp, fontWeight = FontWeight.Bold))
+                        },
+                        actions = {
+                            IconButton(onClick = {
+                                prevPage = currentPage
+                                currentPage = "mypage"
+                            }) {
+                                Icon(Icons.Default.AccountCircle, contentDescription = "마이페이지", tint = Color(0xFFBDBDBD), modifier = Modifier.size(32.dp))
+                            }
+                        },
+                    )
+                }
+                if (currentPage in listOf( "home")) {
+                    TopAppBar(
+                        title = {
                         },
                         actions = {
                             IconButton(onClick = {
@@ -118,13 +132,13 @@ class MainActivity : ComponentActivity() {
                         NavigationBarItem(selected = currentPage == "home", onClick = { currentPage = "home" },
                             label = { Text("기록 생성") }, icon = { Text("🏋️") })
                         NavigationBarItem(selected = currentPage == "history", onClick = { currentPage = "history" },
-                            label = { Text("일기장") }, icon = { Text("📔") })
+                            label = { Text("갤러리") }, icon = { Text("\uD83D\uDDBC") })
                         NavigationBarItem(selected = currentPage == "settings", onClick = { currentPage = "settings" },
-                            label = { Text("AI PT쌤") }, icon = { Text("🤖") })
+                            label = { Text("분석표") }, icon = { Text("\uD83D\uDCC8") })
                         NavigationBarItem(
                             selected = currentPage == "chat",
                             onClick = { currentPage = "chat" },
-                            label = { Text("채팅") },
+                            label = { Text("AI PT쌤") },
                             icon = { Text("💬") }
                         )
                     }

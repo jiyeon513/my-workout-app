@@ -8,6 +8,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import android.content.Context
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import com.example.test.model.User
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -29,7 +30,9 @@ fun LoginScreen(
             .padding(32.dp),
         verticalArrangement = Arrangement.Center
     ) {
-        Text("운동 일기 로그인", fontSize = 24.sp)
+        Text(" FitStack ", style = MaterialTheme.typography.headlineLarge.copy(
+            fontSize = 45.sp, fontWeight = FontWeight.W500))
+        Text("   반가워요, 오늘도 함께 운동해요!",style = MaterialTheme.typography.headlineSmall.copy(fontSize = 15.sp, fontWeight = FontWeight.Normal),)
         Spacer(modifier = Modifier.height(24.dp))
 
         OutlinedTextField(
