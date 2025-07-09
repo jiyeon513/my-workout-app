@@ -246,35 +246,50 @@ class MainActivity : ComponentActivity() {
     fun calculateBadges(records: List<WorkoutRecord>, userId: String): List<Badge> {
         val userRecords = records.filter { it.userId == userId }
 
-        val totalBackSets = userRecords.flatMap { it.logs }
-            .filter { it.part == "등" }
-            .sumOf { it.sets }
-
-        val totalLegReps = userRecords.flatMap { it.logs }
-            .filter { it.part == "하체" }
-            .sumOf { it.sets }
-
-
-//        println("🔍 [DEBUG] 등 세트 수: $totalBackSets / 하체 세트 수: $totalLegSets")
-
-
-        return listOf(
-            Badge(
-                id = "back_100",
-                name = "등근육 장인",
-                description = "등 운동 100세트 완료",
-                icon = "badge_back",
-                isUnlocked = totalBackSets >= 100
-            ),
-            Badge(
-                id = "leg_50",
-                name = "강철 하체",
-                description = "하체 운동 50세트 완료",
-                icon = "badge_leg",
-                isUnlocked = totalLegReps >= 50
-            )
+        // 한글 부위 → 리소스용 영문 이름 매핑
+        val partNameMap = mapOf(
+            "등" to "back",
+            "하체" to "leg",
+            "가슴" to "chest",
+            "어깨" to "shoulder",
+            "복부" to "abs"
         )
+
+        val thresholds = listOf(50, 100, 150)
+
+        // 각 부위별 누적 세트 수 계산
+        val partSetCounts = partNameMap.keys.associateWith { part ->
+            userRecords.flatMap { it.logs }
+                .filter { it.part == part }
+                .sumOf { it.sets }
+        }
+
+        val badges = mutableListOf<Badge>()
+
+        for ((korPart, engPart) in partNameMap) {
+            val count = partSetCounts[korPart] ?: 0
+            for (threshold in thresholds) {
+                val badgeId = "${engPart}_${threshold}"
+                val badgeName = "$korPart ${threshold}세트"
+                val badgeDesc = "$korPart 운동 ${threshold}세트 완료"
+                val badgeIcon = "badge_${engPart}_${threshold}" // ex) badge_back_50
+                val isUnlocked = count >= threshold
+
+                badges.add(
+                    Badge(
+                        id = badgeId,
+                        name = badgeName,
+                        description = badgeDesc,
+                        icon = badgeIcon,
+                        isUnlocked = isUnlocked
+                    )
+                )
+            }
+        }
+
+        return badges
     }
+
 
 
 }
