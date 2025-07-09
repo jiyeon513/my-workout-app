@@ -37,3 +37,7 @@
 
 ### 10. 마이페이지  
 ![마이페이지](https://github.com/user-attachments/assets/cb3f3452-f4e9-448f-9e1f-474903a76322)
+
+
+## APK 파일
+[sha256:3c8ced5fab802a4623987b0f5fc43981813f4514842e967eafdfe3a35b1e13d0](https://github.com/jiyeon513/my-workout-app/releases/tag/v1.0.0)
