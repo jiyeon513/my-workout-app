@@ -63,7 +63,7 @@ fun MypageScreen(
         ) {
             Text(
                 text = "  My Page",
-                style = MaterialTheme.typography.headlineLarge,
+                style = MaterialTheme.typography.headlineLarge.copy(fontSize = 22.sp, fontWeight = FontWeight.Bold),
                 modifier = Modifier.weight(1f)
             )
 
@@ -85,7 +85,7 @@ fun MypageScreen(
                     style = SpanStyle(
                         color = Color(0xFF6A1B9A),
                         fontWeight = FontWeight.Bold,
-                        fontSize = MaterialTheme.typography.titleLarge.fontSize
+                        fontSize = MaterialTheme.typography.titleMedium.fontSize
                     )
                 ) {
                     append("  $currentUserId")
@@ -146,7 +146,7 @@ fun MypageScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
-                "🏅 나의 배지",
+                "  🏅 나의 배지",
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.weight(1f)
             )
@@ -178,7 +178,7 @@ fun MypageScreen(
                         painter = painterResource(id = iconId),
                         contentDescription = badge.name,
                         modifier = Modifier
-                            .size(64.dp)
+                            .size(77.dp)
                             .clip(CircleShape)
                             .padding(4.dp)
                             .clickable { selectedBadge = badge }

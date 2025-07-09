@@ -38,6 +38,7 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.ui.graphics.Color
 
 
+
 class MainActivity : ComponentActivity() {
     private val workoutRecords = mutableStateListOf<WorkoutRecord>()
     private var currentUserId by mutableStateOf<String?>(null)
@@ -132,7 +133,7 @@ class MainActivity : ComponentActivity() {
                         NavigationBarItem(selected = currentPage == "home", onClick = { currentPage = "home" },
                             label = { Text("기록 생성") }, icon = { Text("🏋️") })
                         NavigationBarItem(selected = currentPage == "history", onClick = { currentPage = "history" },
-                            label = { Text("갤러리") }, icon = { Text("\uD83D\uDDBC") })
+                            label = { Text("갤러리") }, icon = { Text("\uD83D\uDCF7") })
                         NavigationBarItem(selected = currentPage == "settings", onClick = { currentPage = "settings" },
                             label = { Text("분석표") }, icon = { Text("\uD83D\uDCC8") })
                         NavigationBarItem(
